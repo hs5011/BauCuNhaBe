@@ -1,0 +1,5 @@
+{
+  "name": "Hệ thống Quản lý Bầu cử",
+  "description": "Ứng dụng quản lý cử tri, tài khoản cán bộ và thống kê tình hình bỏ phiếu theo thời gian thực.",
+  "requestFramePermissions": []
+}
