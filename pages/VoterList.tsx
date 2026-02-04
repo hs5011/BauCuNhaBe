@@ -193,8 +193,8 @@ const VoterList: React.FC = () => {
                   <tr>
                     <th className="px-6 py-4">Họ tên & CCCD</th>
                     <th className="px-6 py-4">Địa chỉ nhà</th>
-                    <th className="px-6 py-4">Khu phố & Địa điểm</th>
-                    <th className="px-6 py-4">Tổ / Đơn vị</th>
+                    <th className="px-6 py-4">Khu vực bỏ phiếu</th>
+                    <th className="px-6 py-4">Tổ / Đơn vị bầu cử</th>
                     <th className="px-6 py-4 text-center">Trạng thái</th>
                     {isAdmin && <th className="px-6 py-4 text-right">Thao tác</th>}
                   </tr>
@@ -214,15 +214,15 @@ const VoterList: React.FC = () => {
                         </p>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm">
-                          <p className="text-slate-700 font-bold">{v.votingArea}</p>
-                          <p className="text-slate-400 text-xs font-medium">{v.neighborhood}</p>
+                      <div className="text-xs text-slate-600 space-y-0.5">
+                          <p className="font-bold">Khu vực bỏ phiếu số: <span className="text-slate-400 font-medium">{v.votingArea}</span></p>
+                          <p className="font-bold">Khu phố: <span className="text-slate-400 font-medium">{v.constituency}</span></p>                          
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-xs text-slate-600 space-y-0.5">
-                          <p className="font-bold">Tổ: <span className="text-slate-400 font-medium">{v.votingGroup}</span></p>
-                          <p className="font-bold">Đơn vị: <span className="text-slate-400 font-medium">{v.constituency}</span></p>
+                          <p className="font-bold">Tổ bầu cử số: <span className="text-slate-400 font-medium">{v.votingGroup}</span></p>
+                          <p className="font-bold">Đơn vị bầu cử số: <span className="text-slate-400 font-medium">{v.constituency}</span></p>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -346,12 +346,12 @@ const VoterList: React.FC = () => {
                   <p className="font-bold text-slate-700">{voterToConfirm.neighborhood}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đơn vị / Tổ</p>
-                  <p className="font-bold text-slate-700">Đơn vị {voterToConfirm.constituency} / Tổ {voterToConfirm.votingGroup}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đơn vị bầu cử / Tổ bầu cử</p>
+                  <p className="font-bold text-slate-700">Đơn vị bầu cử số: {voterToConfirm.constituency} / Tổ bầu cử số: {voterToConfirm.votingGroup}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Điểm bầu cử</p>
-                  <p className="font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded inline-block">{voterToConfirm.votingArea}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Khu vực bỏ phiếu</p>
+                  <p className="font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded inline-block">Khu vực bỏ phiếu số: {voterToConfirm.votingArea}</p>
                 </div>
               </div>
 

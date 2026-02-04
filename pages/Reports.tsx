@@ -216,8 +216,8 @@ const Reports: React.FC = () => {
               <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
                 <tr>
                   <th className="px-6 py-4">Cử tri</th>
-                  <th className="px-6 py-4">Khu vực / Tổ</th>
-                  <th className="px-6 py-4">Địa chỉ</th>
+                  <th className="px-6 py-4">Khu vực bỏ phiếu</th>
+                  <th className="px-6 py-4">Địa chỉ nhà</th>
                   <th className="px-6 py-4 text-center">Trạng thái</th>
                 </tr>
               </thead>
@@ -229,8 +229,8 @@ const Reports: React.FC = () => {
                       <p className="text-xs font-mono text-slate-400">{v.idCard}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-slate-700">{v.votingArea}</p>
-                      <p className="text-xs text-slate-400">Tổ {v.votingGroup} - Đơn vị {v.constituency}</p>
+                      <p className="text-sm font-bold text-slate-700">Khu vực bỏ phiếu số: {v.votingArea}</p>
+                      <p className="text-xs text-slate-400">Tổ bầu cử số: {v.votingGroup} - Đơn vị bầu cử số: {v.constituency}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-xs text-slate-500 max-w-[200px] truncate">{v.address}</p>

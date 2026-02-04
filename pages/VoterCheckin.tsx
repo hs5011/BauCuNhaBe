@@ -199,9 +199,9 @@ const VoterCheckin: React.FC = () => {
                 <DetailItem label="Địa chỉ cư trú" value={selectedVoter.address || 'Chưa cập nhật'} />
               </div>
               <div className="space-y-6">
-                <DetailItem label="Khu phố / Ấp" value={selectedVoter.neighborhood} icon={<MapPin size={18} />} />
-                <DetailItem label="Đơn vị / Tổ bầu cử" value={`Đơn vị ${selectedVoter.constituency} - Tổ ${selectedVoter.votingGroup}`} />
-                <DetailItem label="Địa điểm bỏ phiếu" value={selectedVoter.votingArea} icon={<MapPin size={18} />} highlight />
+                <DetailItem label="Khu phố" value={selectedVoter.neighborhood} icon={<MapPin size={18} />} />
+                <DetailItem label="Đơn vị bầu cử / Tổ bầu cử" value={`Đơn vị bầu cử số: ${selectedVoter.constituency} - Tổ bầu cử số: ${selectedVoter.votingGroup}`} />
+                <DetailItem label="Khu vực bỏ phiếu" value={`Khu vực bỏ phiếu số: ${selectedVoter.votingArea}`} icon={<MapPin size={18} />} highlight />
               </div>
             </div>
 

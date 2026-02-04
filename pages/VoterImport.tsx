@@ -116,12 +116,13 @@ const VoterImport: React.FC = () => {
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100 text-xs text-blue-800">
               <p className="font-bold mb-2 flex items-center gap-1"><AlertCircle size={14}/> Lưu ý tiêu đề cột:</p>
               <ul className="list-disc ml-4 space-y-1 opacity-80">
-                <li>Họ tên / Họ và tên</li>
-                <li>CCCD / Số CCCD</li>
-                <li>Địa chỉ / Địa chỉ nhà</li>
-                <li>Khu phố / Thôn</li>
-                <li>Tổ / Tổ bầu cử</li>
-                <li>Đơn vị / Đơn vị bầu cử</li>
+                <li>Họ tên </li>
+                <li>CCCD </li>
+                <li>Địa chỉ </li>
+                <li>Khu phố </li>
+                <li>Tổ bầu cử</li>
+                <li>Đơn vị bầu cử</li>
+                <li>Khu vực bỏ phiếu</li>
               </ul>
             </div>
           </div>
