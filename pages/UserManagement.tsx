@@ -2,6 +2,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, UserRole, VotingArea } from '../types';
 import { Plus, Search, Edit2, Trash2, X, Shield, Mail, Phone, User as UserIcon, Lock, BadgeCheck, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getUsers, getVotingAreas, saveUsers } from '../services/sheetApi';
+
+const defaultUsers: User[] = [
+  {
+    id: '1',
+    fullName: 'Nguyễn Văn Admin',
+    position: 'Chủ tịch Ủy ban',
+    email: 'admin@election.gov.vn',
+    phone: '0901234567',
+    username: 'admin',
+    password: '123',
+    role: UserRole.ADMIN
+  }
+];
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -9,38 +23,28 @@ const UserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
   useEffect(() => {
-    // Load users
-    const savedUsers = localStorage.getItem('users');
-    if (savedUsers) {
-      setUsers(JSON.parse(savedUsers));
-    } else {
-      const defaultUsers: User[] = [
-        {
-          id: '1',
-          fullName: 'Nguyễn Văn Admin',
-          position: 'Chủ tịch Ủy ban',
-          email: 'admin@election.gov.vn',
-          phone: '0901234567',
-          username: 'admin',
-          password: '123',
-          role: UserRole.ADMIN
+    let cancelled = false;
+    (async () => {
+      try {
+        const [savedUsers, savedAreas] = await Promise.all([getUsers(), getVotingAreas()]);
+        if (!cancelled) {
+          setUsers(savedUsers.length > 0 ? savedUsers : defaultUsers);
+          if (savedUsers.length === 0) await saveUsers(defaultUsers);
+          setVotingAreas(savedAreas || []);
         }
-      ];
-      setUsers(defaultUsers);
-      localStorage.setItem('users', JSON.stringify(defaultUsers));
-    }
-
-    // Load areas
-    const savedAreas = localStorage.getItem('voting_areas');
-    if (savedAreas) {
-      setVotingAreas(JSON.parse(savedAreas));
-    }
+      } catch (_) {
+        if (!cancelled) setUsers(defaultUsers);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Reset page when search changes
@@ -48,46 +52,59 @@ const UserManagement: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const handleAddUser = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+    const usernameRaw = String(formData.get('username') || '').trim();
+    const usernameKey = usernameRaw.toLowerCase();
+    const isDuplicateUsername = users.some(u => {
+      const uKey = String(u.username || '').trim().toLowerCase();
+      if (!uKey) return false;
+      if (editingUser && u.id === editingUser.id) return false; // bỏ qua chính nó khi edit
+      return uKey === usernameKey;
+    });
+    if (isDuplicateUsername) {
+      alert('Username đã tồn tại. Vui lòng chọn username khác.');
+      return;
+    }
     const newUser: User = {
       id: editingUser?.id || Date.now().toString(),
       fullName: formData.get('fullName') as string,
       position: formData.get('position') as string,
       email: formData.get('email') as string,
       phone: formData.get('phone') as string,
-      username: formData.get('username') as string,
+      username: usernameRaw,
       password: (formData.get('password') as string) || editingUser?.password || '123456',
       role: formData.get('role') as UserRole,
-      votingArea: formData.get('votingArea') as string || undefined
+      votingArea: (formData.get('votingArea') as string) || undefined
     };
-
-    let updatedList;
-    if (editingUser) {
-      updatedList = users.map(u => u.id === editingUser.id ? newUser : u);
-    } else {
-      updatedList = [...users, newUser];
-    }
-    
+    const updatedList = editingUser
+      ? users.map(u => u.id === editingUser.id ? newUser : u)
+      : [...users, newUser];
     setUsers(updatedList);
-    localStorage.setItem('users', JSON.stringify(updatedList));
+    try {
+      await saveUsers(updatedList);
+    } catch (err) {
+      alert('Không thể lưu lên Google Sheet. ' + (err instanceof Error ? err.message : 'Thử lại.'));
+      return;
+    }
     setIsModalOpen(false);
     setEditingUser(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const userToDelete = users.find(u => u.id === id);
     if (userToDelete?.username === 'admin') {
       alert('Không thể xóa tài khoản Quản trị viên hệ thống.');
       return;
     }
-
-    if (confirm(`Bạn có chắc chắn muốn xóa tài khoản "${userToDelete?.fullName}"?`)) {
-      const updatedList = users.filter(u => u.id !== id);
-      setUsers(updatedList);
-      localStorage.setItem('users', JSON.stringify(updatedList));
+    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản "${userToDelete?.fullName}"?`)) return;
+    const updatedList = users.filter(u => u.id !== id);
+    setUsers(updatedList);
+    try {
+      await saveUsers(updatedList);
+    } catch (err) {
+      alert('Không thể lưu lên Google Sheet. ' + (err instanceof Error ? err.message : 'Thử lại.'));
     }
   };
 
@@ -102,6 +119,14 @@ const UserManagement: React.FC = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredUsers.slice(start, start + itemsPerPage);
   }, [filteredUsers, currentPage]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

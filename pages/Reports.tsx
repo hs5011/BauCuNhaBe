@@ -6,37 +6,46 @@ import {
   Users, CheckCircle, XCircle, ChevronLeft, ChevronRight, FileText
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { getVoters, getVotingAreas } from '../services/sheetApi';
+
+function normalizeVoters(rows: any[]): Voter[] {
+  return (rows || []).map(r => ({
+    id: String(r.id ?? ''),
+    fullName: String(r.fullName ?? ''),
+    idCard: String(r.idCard ?? ''),
+    address: String(r.address ?? ''),
+    neighborhood: String(r.neighborhood ?? ''),
+    constituency: String(r.constituency ?? ''),
+    votingGroup: String(r.votingGroup ?? ''),
+    votingArea: String(r.votingArea ?? ''),
+    hasVoted: r.hasVoted === true || r.hasVoted === 'TRUE' || r.hasVoted === '1',
+    votedAt: r.votedAt ? String(r.votedAt) : undefined
+  }));
+}
 
 const Reports: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [areas, setAreas] = useState<VotingArea[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  // Filter states
   const [selectedArea, setSelectedArea] = useState('all');
   const [selectedGroup, setSelectedGroup] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'voted' | 'not_voted'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const authData = localStorage.getItem('auth');
     if (authData) {
       const user = JSON.parse(authData).user;
       setCurrentUser(user);
-      if (user.role === UserRole.STAFF && user.votingArea) {
-        setSelectedArea(user.votingArea);
-      }
+      if (user.role === UserRole.STAFF && user.votingArea) setSelectedArea(user.votingArea);
     }
-
-    const savedVoters = localStorage.getItem('voters');
-    if (savedVoters) setVoters(JSON.parse(savedVoters));
-
-    const savedAreas = localStorage.getItem('voting_areas');
-    if (savedAreas) setAreas(JSON.parse(savedAreas));
+    Promise.all([getVoters(), getVotingAreas()]).then(([savedVoters, savedAreas]) => {
+      setVoters(normalizeVoters(savedVoters || []));
+      setAreas(savedAreas || []);
+    }).finally(() => setLoading(false));
   }, []);
 
   // Lấy danh sách các "Tổ" duy nhất dựa trên khu vực đã chọn
@@ -108,6 +117,14 @@ const Reports: React.FC = () => {
   };
 
   const isAdmin = currentUser?.role === UserRole.ADMIN;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

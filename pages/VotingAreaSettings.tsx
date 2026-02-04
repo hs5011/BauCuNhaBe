@@ -2,49 +2,60 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Plus, Trash2, Map, AlertCircle } from 'lucide-react';
 import { VotingArea } from '../types';
+import { getVotingAreas, saveVotingAreas } from '../services/sheetApi';
+
+const defaultAreas: VotingArea[] = [
+  { id: '1', name: 'Khu vực 1' },
+  { id: '2', name: 'Khu vực 2' },
+  { id: '3', name: 'Khu vực 3' },
+  { id: '4', name: 'Khu vực 4' }
+];
 
 const VotingAreaSettings: React.FC = () => {
   const [areas, setAreas] = useState<VotingArea[]>([]);
   const [newAreaName, setNewAreaName] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem('voting_areas');
-    if (saved) {
-      setAreas(JSON.parse(saved));
-    } else {
-      const defaultAreas = [
-        { id: '1', name: 'Khu vực 1' },
-        { id: '2', name: 'Khu vực 2' },
-        { id: '3', name: 'Khu vực 3' },
-        { id: '4', name: 'Khu vực 4' }
-      ];
-      setAreas(defaultAreas);
-      localStorage.setItem('voting_areas', JSON.stringify(defaultAreas));
-    }
+    getVotingAreas().then(saved => {
+      setAreas(saved && saved.length > 0 ? saved : defaultAreas);
+      if (!saved || saved.length === 0) saveVotingAreas(defaultAreas);
+    }).finally(() => setLoading(false));
   }, []);
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAreaName.trim()) return;
-
-    const newArea: VotingArea = {
-      id: Date.now().toString(),
-      name: newAreaName.trim()
-    };
-
+    const newArea: VotingArea = { id: Date.now().toString(), name: newAreaName.trim() };
     const updated = [...areas, newArea];
     setAreas(updated);
-    localStorage.setItem('voting_areas', JSON.stringify(updated));
+    try {
+      await saveVotingAreas(updated);
+    } catch (err) {
+      alert('Không thể lưu lên Google Sheet. ' + (err instanceof Error ? err.message : 'Thử lại.'));
+      return;
+    }
     setNewAreaName('');
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Bạn có chắc muốn xóa khu vực này? Lưu ý: Có thể ảnh hưởng đến các tài khoản đang thuộc khu vực này.')) {
-      const updated = areas.filter(a => a.id !== id);
-      setAreas(updated);
-      localStorage.setItem('voting_areas', JSON.stringify(updated));
+  const handleDelete = async (id: string) => {
+    if (!confirm('Bạn có chắc muốn xóa khu vực này? Lưu ý: Có thể ảnh hưởng đến các tài khoản đang thuộc khu vực này.')) return;
+    const updated = areas.filter(a => a.id !== id);
+    setAreas(updated);
+    try {
+      await saveVotingAreas(updated);
+    } catch (err) {
+      alert('Không thể lưu lên Google Sheet. ' + (err instanceof Error ? err.message : 'Thử lại.'));
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

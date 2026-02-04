@@ -54,7 +54,32 @@ Thư mục `dist/` sẽ chứa file tĩnh để deploy.
 - **Lucide React**: Bộ icon chuyên nghiệp.
 - **Recharts**: Biểu đồ thống kê trực quan.
 - **SheetJS (XLSX)**: Xử lý tệp tin Excel.
-- **Local Storage**: Lưu trữ dữ liệu tạm thời (Demo).
+- **Google Sheet**: Lưu toàn bộ dữ liệu (cử tri, cán bộ, khu vực, cấu hình) trên một file Google Sheet (tùy chọn; nếu chưa cấu hình thì dùng Local Storage).
+
+## 📊 Lưu dữ liệu lên Google Sheet (1 file)
+
+Toàn bộ dữ liệu có thể lưu trên **một file Google Sheet** thay vì chỉ lưu trên trình duyệt.
+
+1. **Tạo file Google Sheet**
+   - Vào [Google Drive](https://drive.google.com) → Tạo → Google Sheets → Trống.
+   - Đặt tên file (VD: "BauCuNhaBe Data").
+
+2. **Gắn mã Apps Script**
+   - Trong file Sheet: **Tiện ích (Extensions)** → **Apps Script**.
+   - Xóa code mặc định, mở file `docs/GoogleAppsScript_Code.js` trong project, copy toàn bộ nội dung và dán vào trình soạn thảo Apps Script.
+   - **Lưu** (Ctrl+S).
+
+3. **Deploy Web App**
+   - Trong Apps Script: **Triển khai (Deploy)** → **Triển khai mới** → **Chọn loại**: **Ứng dụng web**.
+   - **Thực thi với tài khoản**: Tôi (email của bạn).
+   - **Quyền truy cập**: chọn **Bất kỳ ai** (nếu chọn "Chỉ mình tôi" sẽ bị lỗi 403 khi gọi từ app/localhost).
+   - Bấm **Triển khai**, authorize nếu được hỏi, rồi **sao chép URL ứng dụng web** (dạng `https://script.google.com/macros/s/.../exec`).
+   - **Nếu đã deploy trước đó mà gặp lỗi 403**: Vào **Triển khai** → **Quản lý triển khai** → biểu tượng **chỉnh sửa** (bút chì) → đổi **Quyền truy cập** thành **Bất kỳ ai** → **Phiên bản**: **Mới phiên bản** → **Triển khai**.
+
+4. **Nhập URL vào app**
+   - Đăng nhập app → **Cài đặt** (Settings) → mục **Kết nối Google Sheet** → dán URL vừa copy → **Lưu URL**.
+
+Sau đó mọi thao tác (thêm/sửa cử tri, cán bộ, khu vực, thời gian kết thúc) sẽ được lưu lên file Google Sheet. Một file Sheet sẽ có 4 sheet con: **Users**, **Voters**, **VotingAreas**, **ElectionSettings**.
 
 ---
 © 2026 Ủy Ban Bầu cử Đại biểu Quốc hội khóa XIV và Đại biểu Hội đồng nhân dân các cấp Xã Nhà bè.

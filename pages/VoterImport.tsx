@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Trash2, ArrowRight } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Voter } from '../types';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import { appendVoters, setAppInitialized } from '../services/sheetApi';
 
 const VoterImport: React.FC = () => {
   const [importedData, setImportedData] = useState<Voter[]>([]);
@@ -66,20 +67,19 @@ const VoterImport: React.FC = () => {
     reader.readAsBinaryString(file);
   };
 
-  const handleSaveToSystem = () => {
+  const handleSaveToSystem = async () => {
     if (importedData.length === 0) return;
     setIsLoading(true);
-    
-    const existingVoters = JSON.parse(localStorage.getItem('voters') || '[]');
-    const updatedVoters = [...existingVoters, ...importedData];
-    
-    localStorage.setItem('voters', JSON.stringify(updatedVoters));
-    localStorage.setItem('app_initialized', 'true'); 
-    
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Import Excel lớn: append theo lô để tránh timeout/proxy giới hạn
+      await appendVoters(importedData, 300);
+      setAppInitialized();
       setStatus('success');
-    }, 800);
+    } catch (err) {
+      alert('Không thể lưu lên Google Sheet. ' + (err instanceof Error ? err.message : 'Thử lại.'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

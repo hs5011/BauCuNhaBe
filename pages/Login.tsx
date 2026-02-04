@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { User, UserRole } from '../types';
 import { LogIn, Lock, User as UserIcon, Vote, ShieldAlert } from 'lucide-react';
+import { getUsers } from '../services/sheetApi';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -11,33 +12,37 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    // Check against stored users
-    const storedUsers: User[] = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    // Fallback default admin if no users exist
-    const adminUser: User = {
-      id: '1',
-      fullName: 'Quản trị viên',
-      position: 'Hệ thống',
-      email: 'admin@election.gov.vn',
-      phone: '0900000000',
-      username: 'admin',
-      password: '123',
-      role: UserRole.ADMIN
-    };
+    try {
+      const storedUsers = await getUsers();
+      const adminUser: User = {
+        id: '1',
+        fullName: 'Quản trị viên',
+        position: 'Hệ thống',
+        email: 'admin@election.gov.vn',
+        phone: '0900000000',
+        username: 'admin',
+        password: '123',
+        role: UserRole.ADMIN
+      };
+      const users = storedUsers.length > 0 ? storedUsers : [adminUser];
+      const foundUser = users.find(u => u.username === username && u.password === password);
 
-    const users = storedUsers.length > 0 ? storedUsers : [adminUser];
-    const foundUser = users.find(u => u.username === username && u.password === password);
-
-    if (foundUser) {
-      onLogin(foundUser);
-    } else {
-      setError('Tên đăng nhập hoặc mật khẩu không đúng!');
+      if (foundUser) {
+        onLogin(foundUser);
+      } else {
+        setError('Tên đăng nhập hoặc mật khẩu không đúng!');
+      }
+    } catch (err) {
+      setError('Không thể kết nối dữ liệu. Kiểm tra kết nối Google Sheet hoặc thử lại.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,10 +103,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
             <button 
               type="submit" 
-              className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-lg rounded-xl shadow-xl shadow-red-200 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+              disabled={loading}
+              className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-lg rounded-xl shadow-xl shadow-red-200 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70"
             >
-              <LogIn size={22} />
-              ĐĂNG NHẬP HỆ THỐNG
+              {loading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><LogIn size={22} /> ĐĂNG NHẬP HỆ THỐNG</>}
             </button>
           </form>
 
@@ -115,7 +120,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
         
         <p className="text-center text-slate-500 text-[10px] mt-8 font-medium leading-relaxed px-4">
-          © 2026 Ủy Ban Bầu cử Đại biểu Quốc hội khóa XIV và Đại biểu Hội đồng nhân dân các cấp Xã Nhà bè. Bản quyền được bảo lưu.
+          © 2026 SonDH - VietInfo
         </p>
       </div>
     </div>

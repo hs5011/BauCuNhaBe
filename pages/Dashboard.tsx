@@ -1,72 +1,112 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend
 } from 'recharts';
 import { Voter, User, UserRole } from '../types';
 import { Users, UserCheck, Clock, TrendingUp, MapPin, BarChart3 } from 'lucide-react';
+import { getVoters, getElectionEndTime, saveVoters, setAppInitialized, getAppInitialized } from '../services/sheetApi';
 
 const Dashboard: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
   const [isFinished, setIsFinished] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const electionEndTimeRef = useRef<string>('');
 
   useEffect(() => {
     const authData = localStorage.getItem('auth');
-    if (authData) {
-      setCurrentUser(JSON.parse(authData).user);
-    }
+    if (authData) setCurrentUser(JSON.parse(authData).user);
 
-    const saved = localStorage.getItem('voters');
-    const isInitialized = localStorage.getItem('app_initialized');
+    let cancelled = false;
+    (async () => {
+      try {
+        const [saved, savedEndTime, isInitialized] = await Promise.all([
+          getVoters(),
+          getElectionEndTime(),
+          Promise.resolve(getAppInitialized())
+        ]);
+        if (cancelled) return;
+        electionEndTimeRef.current = savedEndTime || '';
+        if (saved && saved.length > 0) {
+          setVoters(normalizeVoters(saved));
+        } else if (!isInitialized) {
+          const sampleVoters: Voter[] = Array.from({ length: 100 }, (_, i) => ({
+            id: `v-${i}`,
+            fullName: `Cử tri Mẫu ${i + 1}`,
+            idCard: `${100000000000 + i}`,
+            address: `${i + 1} Đường số ${Math.ceil((i+1)/10)}, Xã Nhà Bè`,
+            neighborhood: `Khu phố ${Math.ceil((i + 1) / 20)}`,
+            constituency: `Đơn vị ${Math.ceil((i + 1) / 50)}`,
+            votingGroup: `Tổ ${Math.ceil((i + 1) / 10)}`,
+            votingArea: `Khu vực ${Math.ceil((i % 4) + 1)}`,
+            hasVoted: Math.random() > 0.4,
+            votedAt: new Date().toISOString()
+          }));
+          setVoters(sampleVoters);
+          await saveVoters(sampleVoters);
+          setAppInitialized();
+        }
+        if (!savedEndTime) {
+          setTimeLeft('Chưa thiết lập');
+        } else {
+          const end = new Date(savedEndTime).getTime();
+          const now = Date.now();
+          if (now > end) {
+            setTimeLeft('Đã kết thúc');
+            setIsFinished(true);
+          }
+        }
+      } catch (_) {
+        if (!cancelled) setVoters([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
 
-    if (saved && saved !== '[]') {
-      setVoters(JSON.parse(saved));
-    } else if (!isInitialized) {
-      const sampleVoters: Voter[] = Array.from({ length: 100 }, (_, i) => ({
-        id: `v-${i}`,
-        fullName: `Cử tri Mẫu ${i + 1}`,
-        idCard: `${100000000000 + i}`,
-        address: `${i + 1} Đường số ${Math.ceil((i+1)/10)}, Xã Nhà Bè`,
-        neighborhood: `Khu phố ${Math.ceil((i + 1) / 20)}`,
-        constituency: `Đơn vị ${Math.ceil((i + 1) / 50)}`,
-        votingGroup: `Tổ ${Math.ceil((i + 1) / 10)}`,
-        votingArea: `Khu vực ${Math.ceil((i % 4) + 1)}`, 
-        hasVoted: Math.random() > 0.4,
-        votedAt: new Date().toISOString()
-      }));
-      setVoters(sampleVoters);
-      localStorage.setItem('voters', JSON.stringify(sampleVoters));
-      localStorage.setItem('app_initialized', 'true');
-    }
-    
     const timer = setInterval(() => {
-      const savedEndTime = localStorage.getItem('election_end_time');
+      const savedEndTime = electionEndTimeRef.current;
       if (!savedEndTime) {
         setTimeLeft('Chưa thiết lập');
         return;
       }
       const end = new Date(savedEndTime).getTime();
-      const now = new Date().getTime();
+      const now = Date.now();
       const distance = end - now;
       if (distance < 0) {
         setTimeLeft('Đã kết thúc');
         setIsFinished(true);
-        clearInterval(timer);
       } else {
         const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        setTimeLeft(`${hours < 10 ? '0'+hours : hours}:${minutes < 10 ? '0'+minutes : minutes}:${seconds < 10 ? '0'+seconds : seconds}`);
+        setTimeLeft(`${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`);
         setIsFinished(false);
       }
     }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, []);
 
+  function normalizeVoters(rows: any[]): Voter[] {
+    return rows.map(r => ({
+      id: String(r.id ?? ''),
+      fullName: String(r.fullName ?? ''),
+      idCard: String(r.idCard ?? ''),
+      address: String(r.address ?? ''),
+      neighborhood: String(r.neighborhood ?? ''),
+      constituency: String(r.constituency ?? ''),
+      votingGroup: String(r.votingGroup ?? ''),
+      votingArea: String(r.votingArea ?? ''),
+      hasVoted: r.hasVoted === true || r.hasVoted === 'TRUE' || r.hasVoted === '1',
+      votedAt: r.votedAt ? String(r.votedAt) : undefined
+    }));
+  }
+
   const isAdmin = currentUser?.role === UserRole.ADMIN;
-  
   const roleFilteredVoters = voters.filter(v => {
     if (!isAdmin && currentUser?.votingArea) {
       return v.votingArea === currentUser.votingArea;
@@ -104,6 +144,14 @@ const Dashboard: React.FC = () => {
     { name: 'Đã bầu', value: votedCount, color: '#ef4444' },
     { name: 'Chưa bầu', value: totalVoters - votedCount, color: '#e2e8f0' }
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,9 +1,26 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, UserCheck, ShieldCheck, MapPin, Hash, CheckCircle, AlertTriangle, User as UserIcon, X } from 'lucide-react';
 import { Voter, User, UserRole } from '../types';
+import { getVoters, saveVoters } from '../services/sheetApi';
+
+function normalizeVoters(rows: any[]): Voter[] {
+  return (rows || []).map(r => ({
+    id: String(r.id ?? ''),
+    fullName: String(r.fullName ?? ''),
+    idCard: String(r.idCard ?? ''),
+    address: String(r.address ?? ''),
+    neighborhood: String(r.neighborhood ?? ''),
+    constituency: String(r.constituency ?? ''),
+    votingGroup: String(r.votingGroup ?? ''),
+    votingArea: String(r.votingArea ?? ''),
+    hasVoted: r.hasVoted === true || r.hasVoted === 'TRUE' || r.hasVoted === '1',
+    votedAt: r.votedAt ? String(r.votedAt) : undefined
+  }));
+}
 
 const VoterCheckin: React.FC = () => {
+  const [allVoters, setAllVoters] = useState<Voter[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Voter[]>([]);
   const [selectedVoter, setSelectedVoter] = useState<Voter | null>(null);
@@ -13,66 +30,51 @@ const VoterCheckin: React.FC = () => {
 
   useEffect(() => {
     const authData = localStorage.getItem('auth');
-    if (authData) {
-      setCurrentUser(JSON.parse(authData).user);
-    }
+    if (authData) setCurrentUser(JSON.parse(authData).user);
+    getVoters().then(saved => setAllVoters(normalizeVoters(saved)));
   }, []);
 
-  // Logic tìm kiếm thời gian thực
   useEffect(() => {
     const term = searchTerm.trim().toLowerCase();
-    
     if (term.length === 0) {
       setSearchResults([]);
       setHasSearched(false);
       setSelectedVoter(null);
       return;
     }
-
     setHasSearched(true);
-    // Khi đang gõ tìm kiếm mới, nếu đang xem chi tiết một người thì nên ẩn đi để hiện danh sách kết quả mới
-    // trừ khi kết quả tìm kiếm mới vẫn khớp với người đang chọn.
-    
-    const voters: Voter[] = JSON.parse(localStorage.getItem('voters') || '[]');
-    
-    let results = voters.filter(v => 
-      v.idCard.toLowerCase().includes(term) || 
-      v.fullName.toLowerCase().includes(term) ||
+    let results = allVoters.filter(v =>
+      (v.idCard && v.idCard.toLowerCase().includes(term)) ||
+      (v.fullName && v.fullName.toLowerCase().includes(term)) ||
       (v.address && v.address.toLowerCase().includes(term))
     );
-
-    // Lọc theo khu vực nếu là Staff
     if (currentUser?.role === UserRole.STAFF && currentUser.votingArea) {
       results = results.filter(v => v.votingArea === currentUser.votingArea);
     }
-
     setSearchResults(results);
-
-    // Tự động chọn nếu chỉ có duy nhất 1 kết quả và độ dài từ khóa đủ tin cậy (VD: > 3 ký tự hoặc khớp hoàn toàn CCCD)
     if (results.length === 1 && (term.length > 3 || results[0].idCard.toLowerCase() === term)) {
       setSelectedVoter(results[0]);
     } else {
       setSelectedVoter(null);
     }
-  }, [searchTerm, currentUser]);
+  }, [searchTerm, currentUser, allVoters]);
 
-  const handleMarkAsVoted = () => {
+  const handleMarkAsVoted = async () => {
     if (!selectedVoter) return;
-
     setIsSaving(true);
-    const voters: Voter[] = JSON.parse(localStorage.getItem('voters') || '[]');
-    const updatedVoters = voters.map(v => 
+    const updatedVoters = allVoters.map(v =>
       v.id === selectedVoter.id ? { ...v, hasVoted: true, votedAt: new Date().toISOString() } : v
     );
-    localStorage.setItem('voters', JSON.stringify(updatedVoters));
-    
-    setTimeout(() => {
+    try {
+      await saveVoters(updatedVoters);
+      setAllVoters(updatedVoters);
       const updatedVoter = { ...selectedVoter, hasVoted: true, votedAt: new Date().toISOString() };
       setSelectedVoter(updatedVoter);
-      setIsSaving(false);
-      // Cập nhật lại kết quả trong danh sách tìm kiếm
       setSearchResults(prev => prev.map(v => v.id === selectedVoter.id ? updatedVoter : v));
-    }, 600);
+    } catch (err) {
+      alert('Không thể lưu lên Google Sheet. ' + (err instanceof Error ? err.message : 'Thử lại.'));
+    }
+    setIsSaving(false);
   };
 
   const clearSearch = () => {

@@ -5,30 +5,42 @@ import {
   Search, Trash2, CheckCircle, XCircle, UserMinus, Database, MapPin, 
   ChevronLeft, ChevronRight, UserCheck, X, Hash, ShieldCheck, User as UserIcon
 } from 'lucide-react';
+import { getVoters, saveVoters, setAppInitialized } from '../services/sheetApi';
+
+function normalizeVoters(rows: any[]): Voter[] {
+  return (rows || []).map(r => ({
+    id: String(r.id ?? ''),
+    fullName: String(r.fullName ?? ''),
+    idCard: String(r.idCard ?? ''),
+    address: String(r.address ?? ''),
+    neighborhood: String(r.neighborhood ?? ''),
+    constituency: String(r.constituency ?? ''),
+    votingGroup: String(r.votingGroup ?? ''),
+    votingArea: String(r.votingArea ?? ''),
+    hasVoted: r.hasVoted === true || r.hasVoted === 'TRUE' || r.hasVoted === '1',
+    votedAt: r.votedAt ? String(r.votedAt) : undefined
+  }));
+}
 
 const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'voted' | 'not_voted'>('all');
-  
-  // Modal state
   const [voterToConfirm, setVoterToConfirm] = useState<Voter | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
-
-  // Pagination state
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   useEffect(() => {
     const authData = localStorage.getItem('auth');
-    if (authData) {
-      setCurrentUser(JSON.parse(authData).user);
-    }
-    const saved = localStorage.getItem('voters');
-    if (saved) {
-      setVoters(JSON.parse(saved));
-    }
+    if (authData) setCurrentUser(JSON.parse(authData).user);
+    let cancelled = false;
+    getVoters().then(saved => {
+      if (!cancelled) setVoters(normalizeVoters(saved));
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   // Reset page when search or filter changes
@@ -36,11 +48,14 @@ const VoterList: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, filterStatus]);
 
-  const handleDeleteVoter = (id: string) => {
-    if (confirm('Xóa cử tri này khỏi hệ thống?')) {
-      const updated = voters.filter(v => v.id !== id);
-      setVoters(updated);
-      localStorage.setItem('voters', JSON.stringify(updated));
+  const handleDeleteVoter = async (id: string) => {
+    if (!confirm('Xóa cử tri này khỏi hệ thống?')) return;
+    const updated = voters.filter(v => v.id !== id);
+    setVoters(updated);
+    try {
+      await saveVoters(updated);
+    } catch (err) {
+      alert('Không thể lưu lên Google Sheet. ' + (err instanceof Error ? err.message : 'Thử lại.'));
     }
   };
 
@@ -48,28 +63,30 @@ const VoterList: React.FC = () => {
     setVoterToConfirm(v);
   };
 
-  const handleFinalConfirm = () => {
+  const handleFinalConfirm = async () => {
     if (!voterToConfirm) return;
-    
     setIsConfirming(true);
-    
-    // Giả lập lưu dữ liệu
-    setTimeout(() => {
-      const updated = voters.map(v => 
-        v.id === voterToConfirm.id ? { ...v, hasVoted: true, votedAt: new Date().toISOString() } : v
-      );
-      setVoters(updated);
-      localStorage.setItem('voters', JSON.stringify(updated));
-      setIsConfirming(false);
-      setVoterToConfirm(null);
-    }, 600);
+    const updated = voters.map(v =>
+      v.id === voterToConfirm.id ? { ...v, hasVoted: true, votedAt: new Date().toISOString() } : v
+    );
+    setVoters(updated);
+    try {
+      await saveVoters(updated);
+    } catch (err) {
+      alert('Không thể lưu lên Google Sheet. ' + (err instanceof Error ? err.message : 'Thử lại.'));
+    }
+    setIsConfirming(false);
+    setVoterToConfirm(null);
   };
 
-  const handleClearAll = () => {
-    if (confirm('CẢNH BÁO: Hành động này sẽ xóa VĨNH VIỄN toàn bộ danh sách cử tri hiện có. Bạn có chắc chắn?')) {
-      setVoters([]);
-      localStorage.setItem('voters', '[]');
-      localStorage.setItem('app_initialized', 'true');
+  const handleClearAll = async () => {
+    if (!confirm('CẢNH BÁO: Hành động này sẽ xóa VĨNH VIỄN toàn bộ danh sách cử tri hiện có. Bạn có chắc chắn?')) return;
+    setVoters([]);
+    try {
+      await saveVoters([]);
+      setAppInitialized();
+    } catch (err) {
+      alert('Không thể lưu lên Google Sheet. ' + (err instanceof Error ? err.message : 'Thử lại.'));
     }
   };
 
@@ -106,6 +123,14 @@ const VoterList: React.FC = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredVoters.slice(start, start + itemsPerPage);
   }, [filteredVoters, currentPage]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
