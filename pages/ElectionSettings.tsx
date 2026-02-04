@@ -105,7 +105,7 @@ const ElectionSettings: React.FC = () => {
               }}
               className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-slate-700">Dùng proxy CORS (bật khi bị lỗi CORS: chạy localhost hoặc GitHub Pages)</span>
+            <span className="text-sm font-medium text-slate-700">Dùng proxy CORS (bật khi bị lỗi CORS)</span>
           </label>
           <div className="text-xs text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 space-y-1">
             <p className="font-bold">Lưu ý về Proxy CORS:</p>
