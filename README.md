@@ -81,5 +81,40 @@ Toàn bộ dữ liệu có thể lưu trên **một file Google Sheet** thay vì
 
 Sau đó mọi thao tác (thêm/sửa cử tri, cán bộ, khu vực, thời gian kết thúc) sẽ được lưu lên file Google Sheet. Một file Sheet sẽ có 4 sheet con: **Users**, **Voters**, **VotingAreas**, **ElectionSettings**.
 
+## 🗄️ Chuyển backend sang Supabase (khuyến nghị)
+
+Google Sheet/Proxy công cộng có thể chậm và hay timeout. Supabase (Postgres) sẽ nhanh và ổn định hơn khi public.
+
+### 1) Tạo project Supabase
+- Vào Supabase → tạo project mới.
+- Vào **Project Settings → API** copy:
+  - **Project URL**
+  - **anon public key**
+
+### 2) Tạo bảng
+- Vào **SQL Editor** và chạy file `docs/supabase_schema.sql`.
+
+> Lưu ý: file SQL có ghi chú về RLS. Để chạy demo nhanh, bạn có thể tạm tắt RLS. Khi cần bảo mật thật, hãy bật RLS và dùng Supabase Auth + policy.
+
+### 3) Cấu hình biến môi trường
+- Tạo file `.env` tại thư mục project (cùng cấp `package.json`) theo `.env.example`:
+
+```bash
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
+
+### 4) Chạy lại app
+
+```bash
+npm run dev
+```
+
+Khi đã có `VITE_SUPABASE_URL` và `VITE_SUPABASE_ANON_KEY`, app sẽ tự dùng Supabase để lưu:
+- `users`
+- `voters` (import Excel sẽ insert theo lô)
+- `voting_areas`
+- `election_settings` (key: `election_end_time`)
+
 ---
 © 2026 Ủy Ban Bầu cử Đại biểu Quốc hội khóa XIV và Đại biểu Hội đồng nhân dân các cấp Xã Nhà bè.

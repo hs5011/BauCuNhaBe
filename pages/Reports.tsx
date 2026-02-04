@@ -6,7 +6,7 @@ import {
   Users, CheckCircle, XCircle, ChevronLeft, ChevronRight, FileText
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { getVoters, getVotingAreas } from '../services/sheetApi';
+import { getVoters, getVotingAreas } from '../services/supabaseApi';
 
 function normalizeVoters(rows: any[]): Voter[] {
   return (rows || []).map(r => ({

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { User, UserRole } from '../types';
 import { LogIn, Lock, User as UserIcon, Vote, ShieldAlert } from 'lucide-react';
-import { getUsers } from '../services/sheetApi';
+import { getUsers } from '../services/supabaseApi';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -19,31 +19,35 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('');
     setLoading(true);
 
+    const adminUser: User = {
+      id: '1',
+      fullName: 'Quản trị viên',
+      position: 'Hệ thống',
+      email: 'admin@election.gov.vn',
+      phone: '0900000000',
+      username: 'admin',
+      password: '123',
+      role: UserRole.ADMIN
+    };
+
+    let users: User[] = [];
+
     try {
       const storedUsers = await getUsers();
-      const adminUser: User = {
-        id: '1',
-        fullName: 'Quản trị viên',
-        position: 'Hệ thống',
-        email: 'admin@election.gov.vn',
-        phone: '0900000000',
-        username: 'admin',
-        password: '123',
-        role: UserRole.ADMIN
-      };
-      const users = storedUsers.length > 0 ? storedUsers : [adminUser];
-      const foundUser = users.find(u => u.username === username && u.password === password);
-
-      if (foundUser) {
-        onLogin(foundUser);
-      } else {
-        setError('Tên đăng nhập hoặc mật khẩu không đúng!');
-      }
+      users = storedUsers.length > 0 ? storedUsers : [adminUser];
     } catch (err) {
-      setError('Không thể kết nối dữ liệu. Kiểm tra kết nối Google Sheet hoặc thử lại.');
-    } finally {
-      setLoading(false);
+      // Fallback: cho phép dùng admin mặc định khi không kết nối được
+      users = [adminUser];
+      setError('Không thể kết nối Google Sheet. Đang dùng tài khoản mặc định (admin/123).');
     }
+
+    const foundUser = users.find(u => u.username === username && u.password === password);
+    if (foundUser) {
+      onLogin(foundUser);
+    } else {
+      setError('Tên đăng nhập hoặc mật khẩu không đúng!');
+    }
+    setLoading(false);
   };
 
   return (

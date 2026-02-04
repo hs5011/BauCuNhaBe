@@ -4,7 +4,7 @@ import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, ArrowRight } from '
 import { Voter } from '../types';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
-import { appendVoters, setAppInitialized } from '../services/sheetApi';
+import { appendVoters, setAppInitialized } from '../services/supabaseApi';
 
 const VoterImport: React.FC = () => {
   const [importedData, setImportedData] = useState<Voter[]>([]);

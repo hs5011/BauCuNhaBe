@@ -5,7 +5,7 @@ import {
   Search, Trash2, CheckCircle, XCircle, UserMinus, Database, MapPin, 
   ChevronLeft, ChevronRight, UserCheck, X, Hash, ShieldCheck, User as UserIcon
 } from 'lucide-react';
-import { getVoters, saveVoters, setAppInitialized } from '../services/sheetApi';
+import { getVoters, saveVoters, setAppInitialized } from '../services/supabaseApi';
 
 function normalizeVoters(rows: any[]): Voter[] {
   return (rows || []).map(r => ({

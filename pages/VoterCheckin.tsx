@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, UserCheck, ShieldCheck, MapPin, Hash, CheckCircle, AlertTriangle, User as UserIcon, X } from 'lucide-react';
 import { Voter, User, UserRole } from '../types';
-import { getVoters, saveVoters } from '../services/sheetApi';
+import { getVoters, saveVoters } from '../services/supabaseApi';
 
 function normalizeVoters(rows: any[]): Voter[] {
   return (rows || []).map(r => ({

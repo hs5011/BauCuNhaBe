@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Plus, Trash2, Map, AlertCircle } from 'lucide-react';
 import { VotingArea } from '../types';
-import { getVotingAreas, saveVotingAreas } from '../services/sheetApi';
+import { getVotingAreas, saveVotingAreas } from '../services/supabaseApi';
 
 const defaultAreas: VotingArea[] = [
   { id: '1', name: 'Khu vực 1' },

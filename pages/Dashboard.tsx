@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { Voter, User, UserRole } from '../types';
 import { Users, UserCheck, Clock, TrendingUp, MapPin, BarChart3 } from 'lucide-react';
-import { getVoters, getElectionEndTime, saveVoters, setAppInitialized, getAppInitialized } from '../services/sheetApi';
+import { getVoters, getElectionEndTime, saveVoters, setAppInitialized, getAppInitialized } from '../services/supabaseApi';
 
 const Dashboard: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);

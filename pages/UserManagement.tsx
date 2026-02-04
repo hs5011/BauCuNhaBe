@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, UserRole, VotingArea } from '../types';
 import { Plus, Search, Edit2, Trash2, X, Shield, Mail, Phone, User as UserIcon, Lock, BadgeCheck, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getUsers, getVotingAreas, saveUsers } from '../services/sheetApi';
+import { getUsers, getVotingAreas, saveUsers } from '../services/supabaseApi';
 
 const defaultUsers: User[] = [
   {
