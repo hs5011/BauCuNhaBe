@@ -13,10 +13,39 @@ Hệ thống quản lý cử tri, xác nhận danh tính và thống kê tình h
 
 ## 🚀 Hướng dẫn khởi chạy
 
-Dự án sử dụng kiến trúc ESM hiện đại, không cần cài đặt phức tạp.
+**Chạy local (dev):**
+```bash
+npm install
+npm run dev
+```
+Mở http://localhost:3000
 
-1. Tải mã nguồn về máy.
-2. Mở tệp `index.html` trực tiếp trên trình duyệt (Khuyên dùng: Sử dụng extension **Live Server** trên VS Code để có trải nghiệm tốt nhất).
+**Build production:**
+```bash
+npm run build
+```
+Thư mục `dist/` sẽ chứa file tĩnh để deploy.
+
+## 🌐 Đưa lên GitHub và bật GitHub Pages (public)
+
+1. **Tạo repository mới trên GitHub**
+   - Vào https://github.com/new
+   - Đặt tên repo (ví dụ: `BauCuNhaBe` hoặc `he-thong-bau-cu-2026`)
+   - Không chọn "Add a README" (đã có sẵn trong project)
+   - Tạo repo (Create repository)
+
+2. **Đẩy code lên GitHub** (chạy trong thư mục project):
+   ```bash
+   git remote add origin https://github.com/TEN-DANG-NHAP-GITHUB/TEN-REPO.git
+   git push -u origin main
+   ```
+   Thay `TEN-DANG-NHAP-GITHUB` và `TEN-REPO` bằng tên tài khoản và tên repo của bạn.
+
+3. **Bật GitHub Pages**
+   - Vào repo trên GitHub → **Settings** → **Pages**
+   - Ở **Build and deployment** chọn **Source**: **GitHub Actions**
+   - Mỗi lần push lên nhánh `main`, workflow sẽ tự build và deploy. Trang public sẽ có dạng:
+   - `https://TEN-DANG-NHAP-GITHUB.github.io/TEN-REPO/`
 
 ## 🛠️ Công nghệ sử dụng
 
